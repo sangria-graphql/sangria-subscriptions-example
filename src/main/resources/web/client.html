@@ -1,210 +1,181 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>GraphQL Subscription Client</title>
+    <title>GraphQL Subscription Client</title>
 
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
-  <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400,700' rel='stylesheet' type='text/css'>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400,700' rel='stylesheet' type='text/css'>
 
-  <script src="//code.jquery.com/jquery-2.2.1.min.js"></script>
-  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <script src="//code.jquery.com/jquery-2.2.1.min.js"></script>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 
-  <style>
-    /* Space out content a bit */
-    body {
-      padding-top: 20px;
-      padding-bottom: 20px;
-    }
-
-    /* Everything but the jumbotron gets side spacing for mobile first views */
-    .header,
-    .marketing,
-    .footer {
-      padding-right: 15px;
-      padding-left: 15px;
-    }
-
-    /* Custom page header */
-    .header {
-      padding-bottom: 20px;
-      border-bottom: 1px solid #e5e5e5;
-    }
-    /* Make the masthead heading the same height as the navigation */
-    .header h3 {
-      margin-top: 0;
-      margin-bottom: 0;
-      line-height: 40px;
-    }
-
-    /* Custom page footer */
-    .footer {
-      padding-top: 19px;
-      color: #777;
-      border-top: 1px solid #e5e5e5;
-    }
-
-    /* Customize container */
-    @media (min-width: 768px) {
-      .container {
-        max-width: 730px;
-      }
-    }
-    .container-narrow > hr {
-      margin: 30px 0;
-    }
-
-    /* Main marketing message and sign up button */
-    .jumbotron {
-      text-align: center;
-      border-bottom: 1px solid #e5e5e5;
-    }
-    .jumbotron .btn {
-      padding: 14px 24px;
-      font-size: 21px;
-    }
-
-    /* Supporting marketing content */
-    .marketing {
-      margin: 40px 0;
-    }
-    .marketing p + h4 {
-      margin-top: 28px;
-    }
-
-    /* Responsive: Portrait tablets and up */
-    @media screen and (min-width: 768px) {
-      /* Remove the padding we set earlier */
-      .header,
-      .marketing,
-      .footer {
-        padding-right: 0;
-        padding-left: 0;
-      }
-      /* Space out the masthead */
-      .header {
-        margin-bottom: 30px;
-      }
-      /* Remove the bottom border on the jumbotron for visual effect */
-      .jumbotron {
-        border-bottom: 0;
-      }
-    }
-
-    #query, .prettyprint {
-      font-family: 'Source Code Pro';
-    }
-
-    .prettyprint {
-      font-size: 120%;
-      border: none !important;
-      background: white;
-    }
-
-    .error {
-      color: #f6450f;
-    }
-
-    .success {
-      color: #098115;
-    }
-
-    .normal {
-      color: #f6450f;
-    }
-
-  </style>
-
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-
-  <script>
-    $(function () {
-      var source = null
-      var timeout = null
-
-      var add = function(text) {
-        $("#events").prepend($("<pre class='prettyprint'>").html(text))
-        PR.prettyPrint()
-      }
-
-      var clear = function(text) {
-        $("#events").empty()
-        add(text)
-      }
-
-      var subscribe = function() {
-        console.info("Subscribing...")
-        $("#events-title").attr('class', 'normal')
-
-        if (source) source.close();
-
-        if (timeout) {
-          clearTimeout(timeout);
-          timeout = null
+    <style>
+        /* Space out content a bit */
+        body {
+            padding-top: 20px;
+            padding-bottom: 20px;
         }
 
-        var query = encodeURIComponent($("#query").val())
+        /* Everything but the jumbotron gets side spacing for mobile first views */
+        .header,
+        .marketing,
+        .footer {
+            padding-right: 15px;
+            padding-left: 15px;
+        }
 
-        source = new EventSource('/graphql?query=' + query)
+        /* Custom page header */
+        .header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
 
-        source.addEventListener('message', function(e) {
-          add(JSON.stringify(JSON.parse(e.data), null, 2))
+        /* Make the masthead heading the same height as the navigation */
+        .header h3 {
+            margin-top: 0;
+            margin-bottom: 0;
+            line-height: 40px;
+        }
+
+        /* Custom page footer */
+        .footer {
+            padding-top: 19px;
+            color: #777;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        /* Customize container */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 730px;
+            }
+        }
+
+        .container-narrow > hr {
+            margin: 30px 0;
+        }
+
+        /* Main marketing message and sign up button */
+        .jumbotron {
+            text-align: center;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .jumbotron .btn {
+            padding: 14px 24px;
+            font-size: 21px;
+        }
+
+        /* Supporting marketing content */
+        .marketing {
+            margin: 40px 0;
+        }
+
+        .marketing p + h4 {
+            margin-top: 28px;
+        }
+
+        /* Responsive: Portrait tablets and up */
+        @media screen and (min-width: 768px) {
+            /* Remove the padding we set earlier */
+            .header,
+            .marketing,
+            .footer {
+                padding-right: 0;
+                padding-left: 0;
+            }
+
+            /* Space out the masthead */
+            .header {
+                margin-bottom: 30px;
+            }
+
+            /* Remove the bottom border on the jumbotron for visual effect */
+            .jumbotron {
+                border-bottom: 0;
+            }
+        }
+
+        #query, .prettyprint {
+            font-family: 'Source Code Pro';
+        }
+
+        .prettyprint {
+            font-size: 120%;
+            border: none !important;
+            background: white;
+        }
+
+        .error {
+            color: #f6450f;
+        }
+
+        .success {
+            color: #098115;
+        }
+
+        .normal {
+            color: #f6450f;
+        }
+
+    </style>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            var socket = new WebSocket('ws://localhost:8080/graphql');
+            socket.onmessage = function (event) {
+                add(event.data);
+            };
+            socket.onopen = function () {
+                add("websocket is connected...");
+                $("#clear").removeAttr('disabled').click(clear);
+                $("#subscribe").removeAttr('disabled').click(function () {
+                    $("#events-title").removeAttr('class', 'normal');
+                    var msg = {query: $("#query").val()};
+                    socket.send(JSON.stringify(msg));
+                });
+
+            };
+
+            var add = function (text) {
+                var value;
+                try {
+                    value = JSON.stringify(JSON.parse(text), null, 2)
+                } catch (e) {
+                    value = text
+                }
+                $("#events").prepend($("<pre class='prettyprint'>").html(value));
+                PR.prettyPrint()
+            };
+
+            var clear = function (text) {
+                $("#events").empty();
+                add(text)
+            };
         })
-
-        source.addEventListener('open', function(e) {
-          $("#events-title").attr('class', 'success')
-          console.info("Subscribed");
-          clear("")
-        })
-
-        source.addEventListener('error', function(e) {
-          console.error(e, e.readyState)
-          $("#events-title").attr('class', 'error')
-          $.get(e.target.url)
-            .then(function () {
-              if (!timeout) subscribe()
-            })
-            .fail(function (error) {
-              if (error.responseJSON)
-                clear(JSON.stringify(error.responseJSON, null, 2))
-              else
-                clear("" + error.message)
-
-              if (!timeout)
-                timeout = setTimeout(subscribe, 3000)
-            })
-        })
-
-        console.info(source)
-        window.s = source
-      };
-
-      $("#subscribe").click(function (e) {
-        subscribe()
-      })
-
-      subscribe()
-    })
-  </script>
+    </script>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
     <div class="header clearfix">
-      <h3 class="text-muted">GraphQL subscriptions with Sangria</h3>
+        <h3 class="text-muted">GraphQL subscriptions with Sangria</h3>
     </div>
 
     <div class="row marketing">
-      <div class="col-lg-12">
-        <form>
-          <div class="form-group">
-            <label for="Query" class="control-label">GraphQL subscription query</label>
-            <textarea id="query" class="form-control" rows="10" placeholder="GraphQL subscription query goes here" spellcheck="false">
+        <div class="col-lg-12">
+            <form>
+                <div class="form-group">
+                    <label for="Query" class="control-label">GraphQL subscription query</label>
+                    <textarea id="query" class="form-control" rows="10"
+                              placeholder="GraphQL subscription query goes here" spellcheck="false">
 subscription NewAuthors {
   authorCreated {
     id
@@ -214,26 +185,27 @@ subscription NewAuthors {
   }
 }</textarea>
 
-          </div>
+                </div>
 
-          <button type="button" id="subscribe" class="btn btn-success pull-right">Subscribe</button>
-        </form>
-      </div>
+                <button type="button" disabled id="subscribe" class="btn btn-success pull-right">Subscribe</button>
+                <button type="button" disabled id="clear" class="btn btn-success pull-right">Clear</button>
+            </form>
+        </div>
 
-      <div class="col-lg-12">
-        <h3 id="events-title">Events</h3>
-      </div>
+        <div class="col-lg-12">
+            <h3 id="events-title">Events</h3>
+        </div>
 
-      <div class="col-lg-12" id="events">
+        <div class="col-lg-12" id="events">
 
-      </div>
+        </div>
     </div>
 
     <footer class="footer">
-      <p>Built with <a href="http://sangria-graphql.org/">Sangria</a></p>
+        <p>Built with <a href="http://sangria-graphql.org/">Sangria</a></p>
     </footer>
 
-  </div>
+</div>
 
 </body>
 </html>
