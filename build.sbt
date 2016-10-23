@@ -7,15 +7,15 @@ scalaVersion := "2.11.8"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "0.6.0",
-  "org.sangria-graphql" %% "sangria-spray-json" % "0.2.0",
+  "org.sangria-graphql" %% "sangria" % "1.0.0-RC2",
+  "org.sangria-graphql" %% "sangria-spray-json" % "0.3.1",
 
-  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.2",
-  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.2",
-  "de.heikoseeberger" %% "akka-sse" % "1.6.3",
+  "com.typesafe.akka" %% "akka-http-experimental" % "2.4.11",
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.11",
+  "de.heikoseeberger" %% "akka-sse" % "1.11.0",
 
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-  "com.typesafe.akka" %% "akka-stream-testkit-experimental" % "2.0.3" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+  "com.typesafe.akka" %% "akka-stream-testkit-experimental" % "2.0.5" % "test"
 )
 
 resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"

@@ -62,7 +62,7 @@ object schema {
     val OffsetArg = Argument("offset", OptionInputType(IntType), 0)
     val LimitArg = Argument("limit", OptionInputType(IntType), 100)
 
-    def entityFields[T : ClassTag](name: String, tpe: ObjectType[Ctx, T], actor: Ctx ⇒ ActorRef) = fields[Ctx, Any](
+    def entityFields[T](name: String, tpe: ObjectType[Ctx, T], actor: Ctx ⇒ ActorRef) = fields[Ctx, Any](
       Field(name, OptionType(tpe),
         arguments = IdArg :: Nil,
         resolve = c ⇒ (actor(c.ctx) ? Get(c.arg(IdArg))).mapTo[Option[T]]),
