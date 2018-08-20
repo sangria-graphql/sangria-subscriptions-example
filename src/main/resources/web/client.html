@@ -8,12 +8,12 @@
 
   <title>GraphQL Subscription Client</title>
 
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
-  <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:500,400,700' rel='stylesheet' type='text/css'>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+  <link href='//fonts.googleapis.com/css?family=Source+Code+Pro:500,400,700' rel='stylesheet' type='text/css'>
 
   <script src="//code.jquery.com/jquery-2.2.1.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/event-source-polyfill/0.0.9/eventsource.min.js"></script>
-  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/event-source-polyfill/0.0.9/eventsource.min.js"></script>
+  <script src="//cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 
   <style>
     /* Space out content a bit */
@@ -120,7 +120,7 @@
 
   </style>
 
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
   <script>
     $(function () {
@@ -138,8 +138,8 @@
       }
 
       var subscribe = function() {
-        console.info("Subscribing...")
-        $("#events-title").attr('class', 'normal')
+        console.info("Subscribing...");
+        $("#events-title").attr('class', 'normal');
 
         if (source) source.close();
 
@@ -148,32 +148,32 @@
           timeout = null
         }
 
-        var query = encodeURIComponent($("#query").val())
+        var query = encodeURIComponent($("#query").val());
 
-        source = new EventSource('/graphql?query=' + query)
+        source = new EventSource('/graphql?query=' + query);
 
         source.addEventListener('message', function(e) {
           add(JSON.stringify(JSON.parse(e.data), null, 2))
         })
 
         source.addEventListener('open', function(e) {
-          $("#events-title").attr('class', 'success')
+          $("#events-title").attr('class', 'success');
           console.info("Subscribed");
           clear("")
         })
 
         source.addEventListener('error', function(e) {
-          console.error(e, e.readyState)
-          $("#events-title").attr('class', 'error')
+          console.error(e, e.readyState);
+          $("#events-title").attr('class', 'error');
           $.get(e.target.url)
             .then(function () {
               if (!timeout) subscribe()
             })
             .fail(function (error) {
               if (error.responseJSON)
-                clear(JSON.stringify(error.responseJSON, null, 2))
+                clear(JSON.stringify(error.responseJSON, null, 2));
               else
-                clear("" + error.message)
+                clear("" + error.message);
 
               if (!timeout)
                 timeout = setTimeout(subscribe, 3000)

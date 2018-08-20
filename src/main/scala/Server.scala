@@ -1,27 +1,27 @@
-import language.postfixOps
-import generic.{Event, MemoryEventStore}
-import sangria.ast.OperationType
-import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
-import sangria.parser.{QueryParser, SyntaxError}
-import sangria.marshalling.sprayJson._
-import spray.json._
-import akka.http.scaladsl.model.StatusCodes._
-import akka.stream.actor.{ActorPublisher, ActorSubscriber}
-import akka.util.Timeout
 import akka.actor.{ActorSystem, Props}
+import akka.event.Logging
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
+import akka.stream.actor.{ActorPublisher, ActorSubscriber}
 import akka.stream.scaladsl.{Sink, Source}
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.event.Logging
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import de.heikoseeberger.akkasse._
-import de.heikoseeberger.akkasse.EventStreamMarshalling._
+import akka.util.Timeout
+import de.heikoseeberger.akkasse.scaladsl.model.ServerSentEvent
+import generic.{Event, MemoryEventStore}
+import sangria.ast.OperationType
 import sangria.execution.deferred.DeferredResolver
-
+import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
+import sangria.marshalling.sprayJson._
+import sangria.parser.{QueryParser, SyntaxError}
+import spray.json._
+import de.heikoseeberger.akkasse.scaladsl.marshalling.EventStreamMarshalling
+import de.heikoseeberger.akkasse.scaladsl.model.ServerSentEvent
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -31,6 +31,8 @@ object Server extends App {
   val logger = Logging(system, getClass)
 
   import system.dispatcher
+  import Directives._
+  import EventStreamMarshalling._
 
   implicit val timeout = Timeout(10 seconds)
 
@@ -46,8 +48,8 @@ object Server extends App {
       .runWith(Sink.asPublisher(fanout = true))
 
   // Connect event store to views
-  Source.fromPublisher(eventStorePublisher).collect{case event: ArticleEvent ⇒ event}.to(articlesSink).run()
-  Source.fromPublisher(eventStorePublisher).collect{case event: AuthorEvent ⇒ event}.to(authorsSink).run()
+  Source.fromPublisher(eventStorePublisher).collect { case event: ArticleEvent ⇒ event }.to(articlesSink).run()
+  Source.fromPublisher(eventStorePublisher).collect { case event: AuthorEvent ⇒ event }.to(authorsSink).run()
 
   val executor = Executor(schema.createSchema, deferredResolver = DeferredResolver.fetchers(schema.authors))
 
@@ -121,17 +123,17 @@ object Server extends App {
         executeQuery(query, operation, vars)
       }
     } ~
-    (get & path("graphql")) {
-      parameters('query, 'operation.?) { (query, operation) ⇒
-        executeQuery(query, operation)
+      (get & path("graphql")) {
+        parameters('query, 'operation.?) { (query, operation) ⇒
+          executeQuery(query, operation)
+        }
+      } ~
+      (get & path("client")) {
+        getFromResource("web/client.html")
+      } ~
+      get {
+        getFromResource("web/graphiql.html")
       }
-    } ~
-    (get & path("client")) {
-      getFromResource("web/client.html")
-    } ~
-    get {
-      getFromResource("web/graphiql.html")
-    }
 
   Http().bindAndHandle(route, "0.0.0.0", 8080)
 }
