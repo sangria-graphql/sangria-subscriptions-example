@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +7,7 @@
 
   <title>GraphQL Subscription Client</title>
 
-  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
   <link href='//fonts.googleapis.com/css?family=Source+Code+Pro:500,400,700' rel='stylesheet' type='text/css'>
 
   <script src="//code.jquery.com/jquery-2.2.1.min.js"></script>
@@ -35,6 +34,7 @@
       padding-bottom: 20px;
       border-bottom: 1px solid #e5e5e5;
     }
+
     /* Make the masthead heading the same height as the navigation */
     .header h3 {
       margin-top: 0;
@@ -55,6 +55,7 @@
         max-width: 730px;
       }
     }
+
     .container-narrow > hr {
       margin: 30px 0;
     }
@@ -64,6 +65,7 @@
       text-align: center;
       border-bottom: 1px solid #e5e5e5;
     }
+
     .jumbotron .btn {
       padding: 14px 24px;
       font-size: 21px;
@@ -73,6 +75,7 @@
     .marketing {
       margin: 40px 0;
     }
+
     .marketing p + h4 {
       margin-top: 28px;
     }
@@ -86,10 +89,12 @@
         padding-right: 0;
         padding-left: 0;
       }
+
       /* Space out the masthead */
       .header {
         margin-bottom: 30px;
       }
+
       /* Remove the bottom border on the jumbotron for visual effect */
       .jumbotron {
         border-bottom: 0;
@@ -123,25 +128,28 @@
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
   <script>
-    $(function () {
-      var source = null
-      var timeout = null
 
-      var add = function(text) {
+    $(document).ready(function () {
+      var source = null;
+      var timeout = null;
+
+      var add = function (text) {
         $("#events").prepend($("<pre class='prettyprint'>").html(text))
         PR.prettyPrint()
-      }
+      };
 
-      var clear = function(text) {
-        $("#events").empty()
+      var clear = function (text) {
+        $("#events").empty();
         add(text)
-      }
+      };
 
       var subscribe = function() {
         console.info("Subscribing...");
         $("#events-title").attr('class', 'normal');
 
-        if (source) source.close();
+        if (source) {
+          source.close();
+        }
 
         if (timeout) {
           clearTimeout(timeout);
@@ -152,60 +160,64 @@
 
         source = new EventSource('/graphql?query=' + query);
 
-        source.addEventListener('message', function(e) {
+        source.addEventListener('message', function (e) {
           add(JSON.stringify(JSON.parse(e.data), null, 2))
-        })
+        });
 
-        source.addEventListener('open', function(e) {
+        source.addEventListener('open', function (e) {
           $("#events-title").attr('class', 'success');
           console.info("Subscribed");
           clear("")
-        })
+        });
 
-        source.addEventListener('error', function(e) {
+        source.addEventListener('error', function (e) {
           console.error(e, e.readyState);
           $("#events-title").attr('class', 'error');
           $.get(e.target.url)
-            .then(function () {
-              if (!timeout) subscribe()
-            })
-            .fail(function (error) {
-              if (error.responseJSON)
-                clear(JSON.stringify(error.responseJSON, null, 2));
-              else
-                clear("" + error.message);
+          .then(function () {
+            if (!timeout) {
+              subscribe()
+            }
+          })
+          .fail(function (error) {
+            if (error.responseJSON) {
+              clear(JSON.stringify(error.responseJSON, null, 2));
+            } else {
+              clear("" + error.message);
+            }
 
-              if (!timeout)
-                timeout = setTimeout(subscribe, 3000)
-            })
-        })
+            if (!timeout) {
+              timeout = setTimeout(subscribe, 3000)
+            }
+          })
+        });
 
-        console.info(source)
+        console.info(source);
         window.s = source
-      };
+      }
 
       $("#subscribe").click(function (e) {
         subscribe()
-      })
+      });
 
-      subscribe()
+      subscribe();
     })
   </script>
 </head>
 
 <body>
 
-  <div class="container">
-    <div class="header clearfix">
-      <h3 class="text-muted">GraphQL subscriptions with Sangria</h3>
-    </div>
+<div class="container">
+  <div class="header clearfix">
+    <h3 class="text-muted">GraphQL subscriptions with Sangria</h3>
+  </div>
 
-    <div class="row marketing">
-      <div class="col-lg-12">
-        <form>
-          <div class="form-group">
-            <label for="Query" class="control-label">GraphQL subscription query</label>
-            <textarea id="query" class="form-control" rows="10" placeholder="GraphQL subscription query goes here" spellcheck="false">
+  <div class="row marketing">
+    <div class="col-lg-12">
+      <form>
+        <div class="form-group">
+          <label for="Query" class="control-label">GraphQL subscription query</label>
+          <textarea id="query" class="form-control" rows="10" placeholder="GraphQL subscription query goes here" spellcheck="false">
 subscription NewAuthors {
   authorCreated {
     id
@@ -215,26 +227,26 @@ subscription NewAuthors {
   }
 }</textarea>
 
-          </div>
+        </div>
 
-          <button type="button" id="subscribe" class="btn btn-success pull-right">Subscribe</button>
-        </form>
-      </div>
-
-      <div class="col-lg-12">
-        <h3 id="events-title">Events</h3>
-      </div>
-
-      <div class="col-lg-12" id="events">
-
-      </div>
+        <button type="button" id="subscribe" class="btn btn-success pull-right">Subscribe</button>
+      </form>
     </div>
 
-    <footer class="footer">
-      <p>Built with <a href="http://sangria-graphql.org/">Sangria</a></p>
-    </footer>
+    <div class="col-lg-12">
+      <h3 id="events-title">Events</h3>
+    </div>
 
+    <div class="col-lg-12" id="events">
+
+    </div>
   </div>
+
+  <footer class="footer">
+    <p>Built with <a href="http://sangria-graphql.org/">Sangria</a></p>
+  </footer>
+
+</div>
 
 </body>
 </html>
