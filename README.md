@@ -24,6 +24,13 @@ After you started the server, you can point your browser to following URLs:
 * [http://localhost:8080](http://localhost:8080) - GraphiQL UI
 * [http://localhost:8080/client](http://localhost:8080/client) - Simple Server Sent Events GraphQL client that will stream events based on subscription query. 
 
+Or if using Docker
+
+```bash
+docker build -t sangria-subscriptions-example .
+docker run -p 8080:8080 --rm -it sangria-subscriptions-example 
+```
+
 ## High-level overview
 
 High-level picture looks like this:
