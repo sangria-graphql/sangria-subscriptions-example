@@ -1,50 +1,50 @@
 import java.util.UUID
 
-import schema.MutationError
-import generic.View.Get
 import sangria.macros.derive.GraphQLField
 
-import akka.pattern.ask
+import scala.concurrent.Future
 
 trait Mutation {
   this: Ctx ⇒
 
   @GraphQLField
-  def createAuthor(firstName: String, lastName: String) =
+  def createAuthor(firstName: String, lastName: String): Future[Option[Author]] =
     addEvent[Author](authors, AuthorCreated(UUID.randomUUID.toString, 1, firstName, lastName))
 
   @GraphQLField
-  def changeAuthorName(id: String, version: Long, firstName: String, lastName: String) =
-    loadLatestVersion(id, version) flatMap (version ⇒
-      addEvent[Author](authors, AuthorNameChanged(id, version, firstName, lastName)))
-
-  @GraphQLField
-  def deleteAuthor(id: String, version: Long) =
+  def changeAuthorName(id: String, version: Long, firstName: String, lastName: String): Future[Option[Author]] =
     for {
-      version ← loadLatestVersion(id, version)
-      author ← (authors ? Get(id)).mapTo[Option[Author]]
-      _ ← addDeleteEvent(AuthorDeleted(id, version))
+      nextVersion ← loadLatestVersion(id, version)
+      author ← addEvent[Author](authors, AuthorNameChanged(id, nextVersion, firstName, lastName))
     } yield author
 
   @GraphQLField
-  def createArticle(title: String, authorId: String, text: Option[String]) =
-    (authors ? Get(authorId)) flatMap {
-      case Some(author: Author) ⇒
-        addEvent[Article](articles, ArticleCreated(UUID.randomUUID.toString, 1, title, author.id, text))
-      case _ ⇒
-        throw MutationError(s"Author with ID '$authorId' does not exist.")
-    }
+  def deleteAuthor(id: String, version: Long): Future[Author] =
+    for {
+      nextVersion ← loadLatestVersion(id, version)
+      author ← loadAuthor(id)
+      _ ← addDeleteEvent(AuthorDeleted(id, nextVersion))
+    } yield author
 
   @GraphQLField
-  def changeArticleText(id: String, version: Long, text: Option[String]) =
-    loadLatestVersion(id, version) flatMap (version ⇒
-      addEvent[Article](articles, ArticleTextChanged(id, version, text)))
+  def createArticle(title: String, authorId: String, text: Option[String]): Future[Option[Article]] =
+    for {
+      author ← loadAuthor(authorId)
+      article ← addEvent[Article](articles, ArticleCreated(UUID.randomUUID.toString, 1, title, author.id, text))
+    } yield article
+
+  @GraphQLField
+  def changeArticleText(id: String, version: Long, text: Option[String]): Future[Option[Article]] =
+    for {
+      nextVersion ← loadLatestVersion(id, version)
+      article ← addEvent[Article](articles, ArticleTextChanged(id, nextVersion, text))
+    } yield article
 
   @GraphQLField
   def deleteArticle(id: String, version: Long) =
     for {
       version ← loadLatestVersion(id, version)
-      author ← (articles ? Get(id)).mapTo[Option[Article]]
+      article ← loadArticle(id)
       _ ← addDeleteEvent(ArticleDeleted(id, version))
-    } yield author
+    } yield article
 }

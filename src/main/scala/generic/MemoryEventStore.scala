@@ -6,8 +6,8 @@ import akka.stream.actor.ActorPublisherMessage.{Cancel, Request}
 class MemoryEventStore extends ActorPublisher[Event] {
   import MemoryEventStore._
 
-  // in-memory event storage
-  var events = Vector.empty[Event]
+  // internal state, only the latest version is useful for commands
+  var eventVersions = Map.empty[String, Long]
 
   var eventBuffer = Vector.empty[Event]
 
@@ -15,38 +15,25 @@ class MemoryEventStore extends ActorPublisher[Event] {
     case AddEvent(event) if eventBuffer.size >= MaxBufferCapacity ⇒
       sender() ! OverCapacity(event)
 
-    case LatestEventVersion(id) ⇒
-      val entityEvents = events.filter(_.id == id)
+    case LatestEventVersion(id) ⇒ sender() ! eventVersions.get(id)
 
-      if (entityEvents.nonEmpty)
-        sender() ! Some(entityEvents.maxBy(_.version).version)
-      else
-        sender() ! None
-
-    case AddEvent(event) ⇒
-      val entityEvents = events.filter(_.id == event.id)
-
-      if (entityEvents.isEmpty) {
+    case AddEvent(event) ⇒ eventVersions.get(event.id) match {
+      case None ⇒
         addEvent(event)
         sender() ! EventAdded(event)
-      } else {
-        val latestEvent = entityEvents.maxBy(_.version)
-
-        if (latestEvent.version == event.version - 1) {
-          addEvent(event)
-          sender() ! EventAdded(event)
-        } else {
-          sender() ! ConcurrentModification(event, latestEvent.version)
-        }
-      }
+      case Some(version) if version == event.version - 1 ⇒
+        addEvent(event)
+        sender() ! EventAdded(event)
+      case Some(version) ⇒ sender() ! ConcurrentModification(event, version)
+    }
 
     case Request(_) ⇒ deliverEvents()
     case Cancel ⇒ context.stop(self)
   }
 
   def addEvent(event: Event) = {
-    events  = events :+ event
-    eventBuffer  = eventBuffer :+ event
+    eventVersions + (event.id → event.version)
+    eventBuffer = eventBuffer :+ event
 
     deliverEvents()
   }

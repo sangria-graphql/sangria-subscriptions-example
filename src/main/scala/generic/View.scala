@@ -1,16 +1,15 @@
 package generic
 
-import language.postfixOps
-
-import akka.actor.{ActorLogging, ActorRef}
-import akka.stream.actor.{OneByOneRequestStrategy, ActorSubscriber}
-
-import akka.stream.actor.ActorSubscriberMessage._
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill}
+import akka.stream.actor.OneByOneRequestStrategy
+import akka.stream.scaladsl.{Flow, Sink}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.reflect.ClassTag
 
-abstract class View[Entity <: Versioned, Ev <: Event] extends ActorSubscriber with ActorLogging {
+abstract class View[Entity <: Versioned, Ev <: Event: ClassTag] extends Actor with ActorLogging {
   import View._
 
   private var entities = ListMap.empty[String, Entity]
@@ -19,15 +18,19 @@ abstract class View[Entity <: Versioned, Ev <: Event] extends ActorSubscriber wi
   import context.dispatcher
 
   def receive = {
-    case OnNext(event: Event) if handleEvent.isDefinedAt(event.asInstanceOf[Ev]) ⇒
-      handleEvent(event.asInstanceOf[Ev])
+    case Init ⇒ sender() ! Ack
+    case event: Ev ⇒
+      if (handleEvent.isDefinedAt(event.asInstanceOf[Ev])) {
+        handleEvent(event.asInstanceOf[Ev])
 
-      val waitingKey = event.id → event.version
+        val waitingKey = event.id → event.version
 
-      waiting.get(waitingKey) foreach { senderRef ⇒
-        senderRef ! entities.get(event.id)
-        waiting = waiting.filterNot(_._1 == waitingKey)
+        waiting.get(waitingKey) foreach { senderRef ⇒
+          senderRef ! entities.get(event.id)
+          waiting = waiting.filterNot(_._1 == waitingKey)
+        }
       }
+      sender() ! Ack
     case RemoveWaiting(key) ⇒
       waiting.get(key) foreach { senderRef ⇒
         senderRef ! None
@@ -76,9 +79,19 @@ abstract class View[Entity <: Versioned, Ev <: Event] extends ActorSubscriber wi
 }
 
 object View {
+
+  def asSink[Ev <: Event: ClassTag](view: ActorRef) = {
+    Flow[Event]
+      .collect{ case e: Ev ⇒ e }
+      .to(Sink.actorRefWithAck(view, View.Init, View.Ack, PoisonPill))
+  }
+
   case class List(offset: Int, limit: Int)
   case class Get(id: String, version: Option[Long] = None)
   case class GetMany(ids: Seq[String])
 
   private case class RemoveWaiting(key: (String, Long))
+
+  private case object Ack
+  private case object Init
 }
