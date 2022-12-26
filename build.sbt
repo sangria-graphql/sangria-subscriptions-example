@@ -3,7 +3,7 @@ version := "0.1.0-SNAPSHOT"
 
 description := "Sangria Subscriptions Example"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.17"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 libraryDependencies ++= Seq(
