@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.6",
   "de.heikoseeberger" %% "akka-sse" % "2.0.0",
 
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.9" % "test",
 
   // akka-http still depends on 2.4 but should work with 2.5 without problems
   // see https://github.com/akka/akka-http/issues/821
