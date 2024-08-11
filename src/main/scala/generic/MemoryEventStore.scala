@@ -3,12 +3,10 @@ package generic
 import akka.stream.stage.{StageLogging, GraphStageLogic, GraphStage, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.actor.ActorRef
+import akka.stream.stage.InHandler
 
 class MemoryEventStore(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Event]] {
   import MemoryEventStore._
-
-  // internal state, only the latest version is useful for commands
-  var eventVersions = Map.empty[String, Long]
 
   private val out: Outlet[Event] = Outlet("MessageSource");
   override def shape: SourceShape[Event] = SourceShape(out)
@@ -17,6 +15,7 @@ class MemoryEventStore(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Ev
     new GraphStageLogic(shape) with StageLogging {
       lazy val self: GraphStageLogic.StageActor = getStageActor(onMessage)
 
+      var eventVersions = Map.empty[String, Long]
       var eventBuffer = Vector.empty[Event]
 
       setHandler(
@@ -38,6 +37,7 @@ class MemoryEventStore(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Ev
           sender ! eventVersions.get(latestEvent.id)
         }
         case (sender, eventToAdd: AddEvent) =>
+          log.info("Event in memory:" + eventToAdd.event)
           eventVersions.get(eventToAdd.event.id) match {
             case None =>
               addEvent(eventToAdd.event)
