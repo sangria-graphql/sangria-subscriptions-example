@@ -6,6 +6,9 @@
 .idea_modules
 
 # sbt specific
+.bloop
+.bsp
+.metals
 dist/*
 target/
 lib_managed/
