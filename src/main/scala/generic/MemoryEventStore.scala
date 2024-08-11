@@ -1,52 +1,67 @@
 package generic
 
-import akka.stream.actor.ActorPublisher
-import akka.stream.actor.ActorPublisherMessage.{Cancel, Request}
+import akka.stream.stage.{StageLogging, GraphStageLogic, GraphStage, OutHandler}
+import akka.stream.{Attributes, Outlet, SourceShape}
+import akka.actor.ActorRef
 
-class MemoryEventStore extends ActorPublisher[Event] {
+class MemoryEventStore(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Event]] {
   import MemoryEventStore._
 
   // internal state, only the latest version is useful for commands
   var eventVersions = Map.empty[String, Long]
 
-  var eventBuffer = Vector.empty[Event]
+  private val out: Outlet[Event] = Outlet("MessageSource");
+  override def shape: SourceShape[Event] = SourceShape(out)
 
-  def receive = {
-    case AddEvent(event) if eventBuffer.size >= MaxBufferCapacity ⇒
-      sender() ! OverCapacity(event)
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new GraphStageLogic(shape) with StageLogging {
+      lazy val self: GraphStageLogic.StageActor = getStageActor(onMessage)
 
-    case LatestEventVersion(id) ⇒ sender() ! eventVersions.get(id)
+      var eventBuffer = Vector.empty[Event]
 
-    case AddEvent(event) ⇒ eventVersions.get(event.id) match {
-      case None ⇒
-        addEvent(event)
-        sender() ! EventAdded(event)
-      case Some(version) if version == event.version - 1 ⇒
-        addEvent(event)
-        sender() ! EventAdded(event)
-      case Some(version) ⇒ sender() ! ConcurrentModification(event, version)
+      setHandler(
+        out,
+        new OutHandler {
+          override def onPull() = deliverEvents()
+        }
+      )
+
+      override def preStart(): Unit = {
+        sourceFeeder ! AssignStageActor(self.ref)
+      }
+
+      private def onMessage(x: (ActorRef, Any)) = x match {
+        case (sender, eventToAdd: AddEvent) if (eventBuffer.size >= MaxBufferCapacity) => {
+          sender ! OverCapacity(eventToAdd.event)
+        }
+        case (sender, latestEvent: LatestEventVersion) => {
+          sender ! eventVersions.get(latestEvent.id)
+        }
+        case (sender, eventToAdd: AddEvent) =>
+          eventVersions.get(eventToAdd.event.id) match {
+            case None =>
+              addEvent(eventToAdd.event)
+              sender ! EventAdded(eventToAdd.event)
+            case Some(version) if version == eventToAdd.event.version - 1 =>
+              addEvent(eventToAdd.event)
+              sender ! EventAdded(eventToAdd.event)
+            case Some(version) => sender ! ConcurrentModification(eventToAdd.event, version)
+          }
+      }
+
+      private def addEvent(event: Event) = {
+        eventVersions + (event.id -> event.version)
+        eventBuffer = eventBuffer :+ event
+
+        deliverEvents()
+      }
+
+      private def deliverEvents(): Unit = {
+        val (use, keep) = eventBuffer.splitAt(1)
+        eventBuffer = keep
+        use.foreach(element => push(out, element))
+      }
     }
-
-    case Request(_) ⇒ deliverEvents()
-    case Cancel ⇒ context.stop(self)
-  }
-
-  def addEvent(event: Event) = {
-    eventVersions + (event.id → event.version)
-    eventBuffer = eventBuffer :+ event
-
-    deliverEvents()
-  }
-
-  def deliverEvents(): Unit = {
-    if (isActive && totalDemand > 0) {
-      val (use, keep) = eventBuffer.splitAt(totalDemand.toInt)
-
-      eventBuffer = keep
-
-      use foreach onNext
-    }
-  }
 }
 
 object MemoryEventStore {
@@ -58,4 +73,6 @@ object MemoryEventStore {
   case class ConcurrentModification(event: Event, latestVersion: Long)
 
   val MaxBufferCapacity = 1000
+
+  case class AssignStageActor(actorRef: ActorRef)
 }
