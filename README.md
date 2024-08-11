@@ -21,8 +21,8 @@ This uses an [sbt-revolver](https://github.com/spray/sbt-revolver) plugin. It wi
    
 After you started the server, you can point your browser to following URLs:
  
-* [http://localhost:8080](http://localhost:8080) - GraphiQL UI
-* [http://localhost:8080/client](http://localhost:8080/client) - Simple Server Sent Events GraphQL client that will stream events based on subscription query. 
+* [http://localhost:8084](http://localhost:8084) - GraphiQL UI
+* [http://localhost:8084/client](http://localhost:8084/client) - Simple Server Sent Events GraphQL client that will stream events based on subscription query. 
 
 ## High-level overview
 
